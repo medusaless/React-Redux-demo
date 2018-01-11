@@ -1945,7 +1945,10 @@ Object.defineProperty(exports, "__esModule", {
     value: true
 });
 exports.default = {
-    PLUS_ONE: 'plusone'
+    PLUS_ONE: 'PLUS_ONE',
+    JSON_FETCH_START: 'JSON_FETCH_START',
+    JSON_FETCH_SUCCESS: 'JSON_FETCH_SUCCESS',
+    JSON_FETCH_FAIL: 'JSON_FETCH_FAIL'
 };
 
 /***/ }),
@@ -1971,13 +1974,17 @@ var _redux = __webpack_require__(10);
 
 var _reactRedux = __webpack_require__(18);
 
-var _reducer = __webpack_require__(72);
+var _reduxThunk = __webpack_require__(72);
+
+var _reduxThunk2 = _interopRequireDefault(_reduxThunk);
+
+var _reducer = __webpack_require__(73);
 
 var _reducer2 = _interopRequireDefault(_reducer);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-var store = (0, _redux.createStore)(_reducer2.default);
+var store = (0, _redux.createStore)(_reducer2.default, (0, _redux.applyMiddleware)(_reduxThunk2.default));
 
 _reactDom2.default.render(_react2.default.createElement(
   _reactRedux.Provider,
@@ -19323,7 +19330,12 @@ var HelloComponent = function (_React$Component) {
         value: function render() {
             var _props = this.props,
                 number = _props.number,
-                plusOne = _props.plusOne;
+                plusOne = _props.plusOne,
+                getJson = _props.getJson,
+                jsonData = _props.jsonData;
+
+
+            var jsonStr = typeof jsonData == 'undefined' ? 'no data' : JSON.stringify(jsonData);
 
             return _react2.default.createElement(
                 'div',
@@ -19334,7 +19346,19 @@ var HelloComponent = function (_React$Component) {
                     'Add'
                 ),
                 '\xA0',
-                number
+                number,
+                _react2.default.createElement(
+                    'button',
+                    { onClick: function onClick() {
+                            getJson('/json/test.json');
+                        } },
+                    'GetJson'
+                ),
+                _react2.default.createElement(
+                    'div',
+                    null,
+                    jsonStr
+                )
             );
         }
     }]);
@@ -19344,7 +19368,8 @@ var HelloComponent = function (_React$Component) {
 
 function mapState(state) {
     return {
-        number: state.num
+        number: state.num,
+        jsonData: state.jsonData
     };
 }
 
@@ -21270,6 +21295,7 @@ Object.defineProperty(exports, "__esModule", {
     value: true
 });
 exports.plusOne = undefined;
+exports.getJson = getJson;
 
 var _type = __webpack_require__(29);
 
@@ -21283,8 +21309,67 @@ var plusOne = exports.plusOne = function plusOne() {
     };
 };
 
+function getJson(url) {
+    return function (dispatch) {
+        dispatch({
+            type: _type2.default.JSON_FETCH_START
+        });
+        fetch(url, {
+            mode: "no-cors"
+        }).then(function (response) {
+            if (response.ok) {
+                return response.json();
+            } else {
+                dispatch({
+                    type: _type2.default.JSON_FETCH_FAIL,
+                    error: e
+                });
+            }
+        }).then(function (json) {
+            dispatch({
+                type: _type2.default.JSON_FETCH_SUCCESS,
+                jsonData: json
+            });
+        }).catch(function (e) {
+            dispatch({
+                type: _type2.default.JSON_FETCH_FAIL,
+                error: e
+            });
+        });
+    };
+}
+
 /***/ }),
 /* 72 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+exports.__esModule = true;
+function createThunkMiddleware(extraArgument) {
+  return function (_ref) {
+    var dispatch = _ref.dispatch,
+        getState = _ref.getState;
+    return function (next) {
+      return function (action) {
+        if (typeof action === 'function') {
+          return action(dispatch, getState, extraArgument);
+        }
+
+        return next(action);
+      };
+    };
+  };
+}
+
+var thunk = createThunkMiddleware();
+thunk.withExtraArgument = createThunkMiddleware;
+
+exports['default'] = thunk;
+
+/***/ }),
+/* 73 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -21301,7 +21386,8 @@ var _type2 = _interopRequireDefault(_type);
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 var initialState = {
-    num: 0
+    num: 0,
+    jsonData: undefined
 };
 
 function addNumberReducer() {
@@ -21310,9 +21396,28 @@ function addNumberReducer() {
 
     switch (action.type) {
         case _type2.default.PLUS_ONE:
-            return {
+            return Object.assign({}, state, {
                 num: ++state.num
-            };
+            });
+            break;
+        case _type2.default.JSON_FETCH_START:
+            console.log('data fetch start');
+
+            return state;
+            break;
+        case _type2.default.JSON_FETCH_SUCCESS:
+            console.log('data fetch success');
+            debugger;
+            return Object.assign({}, state, {
+                jsonData: action.jsonData
+            });
+            break;
+        case _type2.default.JSON_FETCH_FAIL:
+            console.log('date fetch fail' + state.error);
+
+            return Object.assign({}, state, {
+                jsonData: undefined
+            });
             break;
         default:
             return initialState;

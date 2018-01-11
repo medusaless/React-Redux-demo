@@ -9,10 +9,17 @@ class HelloComponent extends React.Component {
         super();
     }
     render() {
-        const { number, plusOne } = this.props
+        const { number, plusOne, getJson, jsonData } = this.props;
+        
+        let jsonStr = typeof jsonData == 'undefined' ? 'no data' : JSON.stringify(jsonData);
+
         return (
             <div>
                 <button onClick={plusOne}>Add</button>&nbsp;{number}
+                <button onClick={() => { getJson('/json/test.json') }}>GetJson</button>
+                  <div>
+                     {jsonStr}
+                  </div>
             </div>
         )
     }
@@ -21,6 +28,7 @@ class HelloComponent extends React.Component {
 function mapState(state) {
     return {
         number: state.num,
+        jsonData: state.jsonData
     }
 }
 
